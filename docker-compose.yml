@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      # Web
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Map the static conf into the container
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      # Map the dynamic conf into the container
+      - ./traefik/config:/etc/traefik/config:ro
+      # Map existing certificates into the container
+      - ./certs:/etc/certs:ro
+      # Map directory for Lets Encrypt
+      - ./certs/acme.json:/acme.json
+    networks:
+      - proxy
+    labels:
+      # Enable this container to be mapped by traefik
+      # For more information, see: https://docs.traefik.io/providers/docker/#exposedbydefault
+      - "traefik.enable=true"
+      # Use "traefik" router configuration defined into the dynamic config file: ./traefik/config.yml
+      - "traefik.http.routers.traefik=true"
+
+networks:
+  proxy:
+    external: true
